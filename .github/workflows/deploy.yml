@@ -83,4 +83,4 @@ jobs:
             echo "Running new container..."
             docker run -d -p 8080:80 --name zerapos-fe-container zerapos-fe:latest
 
-            echo "✅ Deployment complete"
+            echo "✅ Deployment complete!"
