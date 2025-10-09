@@ -19,10 +19,32 @@ jobs:
       - name: Install ZeroTier and join network
         run: |
           curl -s https://install.zerotier.com | sudo bash
-          sudo zerotier-cli status || sudo systemctl start zerotier-one
+          sudo systemctl start zerotier-one
           sleep 5
           sudo zerotier-cli join bb720a5aaecfa5e5
           sleep 10
+          echo "ZT_NODE_ID=$(sudo zerotier-cli info | awk '{print $3}')" >> $GITHUB_ENV
+          echo "ZeroTier node ID: $ZT_NODE_ID"
+
+      - name: Auto-authorize node on ZeroTier
+        env:
+          ZEROTIER_API_TOKEN: ${{ secrets.ZEROTIER_API_TOKEN }}
+        run: |
+          echo "Authorizing ZeroTier node..."
+          ZT_NODE_ID=$(sudo zerotier-cli info | awk '{print $3}')
+          ZT_NETWORK_ID="bb720a5aaecfa5e5"
+
+          # Approve via API
+          curl -X POST \
+            -H "Authorization: bearer $ZEROTIER_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"authorized": true}' \
+            https://api.zerotier.com/api/v1/network/$ZT_NETWORK_ID/member/$ZT_NODE_ID
+
+          echo "✅ Node $ZT_NODE_ID authorized."
+
+      - name: Debug ZeroTier (optional)
+        run: |
           sudo zerotier-cli listnetworks
 
       - name: Copy project to remote server and deploy
