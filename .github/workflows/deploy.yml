@@ -34,14 +34,25 @@ jobs:
           ZT_NODE_ID=$(sudo zerotier-cli info | awk '{print $3}')
           ZT_NETWORK_ID="bb720a5aaecfa5e5"
 
-          # Approve via API
-          curl -X POST \
-            -H "Authorization: bearer $ZEROTIER_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"authorized": true}' \
-            https://api.zerotier.com/api/v1/network/$ZT_NETWORK_ID/member/$ZT_NODE_ID
-
-          echo "✅ Node $ZT_NODE_ID authorized."
+          echo "Node ID: $ZT_NODE_ID"
+          echo "Waiting for ZeroTier node to register..."
+          for i in {1..10}; do
+            STATUS=$(curl -s -H "Authorization: bearer $ZEROTIER_API_TOKEN" \
+              "https://api.zerotier.com/api/v1/network/$ZT_NETWORK_ID/member/$ZT_NODE_ID" \
+              | jq -r .config.id 2>/dev/null || echo "none")
+            if [ "$STATUS" != "none" ] && [ "$STATUS" != "null" ]; then
+              echo "Node found on ZeroTier — authorizing..."
+              curl -s -X POST \
+                -H "Authorization: bearer $ZEROTIER_API_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d '{"authorized": true}' \
+                "https://api.zerotier.com/api/v1/network/$ZT_NETWORK_ID/member/$ZT_NODE_ID"
+              echo "✅ Node $ZT_NODE_ID authorized."
+              break
+            fi
+            echo "Node not yet visible... retrying in 5s ($i/10)"
+            sleep 5
+          done
 
       - name: Debug ZeroTier (optional)
         run: |
