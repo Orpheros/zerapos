@@ -54,9 +54,21 @@ jobs:
             sleep 5
           done
 
-      - name: Debug ZeroTier (optional)
+      - name: Verify ZeroTier connection
         run: |
-          sudo zerotier-cli listnetworks
+          echo "Waiting for ZeroTier node to receive authorization..."
+          for i in {1..10}; do
+            STATUS=$(sudo zerotier-cli listnetworks | awk '{print $6}')
+            if [ "$STATUS" = "OK" ]; then
+              echo "✅ ZeroTier connection active!"
+              sudo zerotier-cli listnetworks
+              ip addr show | grep zt || true
+              break
+            else
+              echo "Status: $STATUS — waiting 5s..."
+              sleep 5
+            fi
+          done
 
       - name: Copy project to remote server and deploy
         uses: appleboy/ssh-action@v1.1.0
