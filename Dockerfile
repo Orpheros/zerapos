@@ -6,6 +6,7 @@ COPY package*.json .
 COPY tsconfig.app.json .
 COPY tsconfig.json .
 COPY tsconfig.node.json .
+COPY vite.config.ts .
 
 RUN npm install
 
