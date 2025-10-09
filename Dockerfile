@@ -1,4 +1,4 @@
-FROM node:22-slim
+FROM node:22-slim as builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ CMD ["npm", "run", "build"]
 
 FROM nginx:1.25-alpine
 
-COPY /app/zerapos-fe /usr/share/nginx/html/zerapos-fe
+COPY --from=builder /app/zerapos-fe /usr/share/nginx/html/zerapos-fe
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
