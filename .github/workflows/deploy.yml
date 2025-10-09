@@ -54,6 +54,11 @@ jobs:
             sleep 5
           done
 
+      - name: Join ZeroTier network
+        run: |
+          echo "Zerotier network id $ZT_NETWORK_ID"
+          sudo zerotier-cli join $ZT_NETWORK_ID
+
       # - name: Refresh ZeroTier connection
       #   run: |
       #     echo "Refreshing ZeroTier connection..."
