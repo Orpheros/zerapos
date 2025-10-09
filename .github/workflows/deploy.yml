@@ -15,6 +15,50 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Install ZeroTier and restore CI identity
+        env:
+          ZEROTIER_IDENTITY_SECRET_B64: ${{ secrets.ZEROTIER_IDENTITY_SECRET_B64 }}
+        run: |
+          # install ZeroTier
+          curl -s https://install.zerotier.com | sudo bash
+
+          # stop service so we can write identity safely
+          sudo systemctl stop zerotier-one || true
+
+          # write identity.secret from secret (base64)
+          echo "$ZEROTIER_IDENTITY_SECRET_B64" | base64 -d | sudo tee /var/lib/zerotier-one/identity.secret > /dev/null
+          sudo chown root:root /var/lib/zerotier-one/identity.secret
+          sudo chmod 600 /var/lib/zerotier-one/identity.secret
+
+          # start service (it will use the identity we wrote)
+          sudo systemctl start zerotier-one
+          sleep 4
+          echo "zerotier-cli info:"
+          sudo zerotier-cli info
+
+      - name: Join ZeroTier network and show node id
+        run: |
+          sudo zerotier-cli join $ZT_NETWORK_ID
+          sleep 5
+          echo "listnetworks:"
+          sudo zerotier-cli listnetworks || true
+          echo "Node ID: $(sudo zerotier-cli info | awk '{print $3}')"
+
+      - name: Wait for ZeroTier 'OK' (authorized/has IP)
+        run: |
+          echo "Waiting up to 2 minutes for ZeroTier authorization..."
+          for i in {1..24}; do
+            STATUS=$(sudo zerotier-cli listnetworks 2>/dev/null | awk '{print $6}' | head -n1 || echo "UNKNOWN")
+            echo "Attempt $i - status: $STATUS"
+            if [ "$STATUS" = "OK" ]; then
+              echo "ZeroTier authorized and has IP — continuing."
+              sudo zerotier-cli listnetworks
+              ip addr show | grep zt || true
+              break
+            fi
+            sleep 5
+          done
+
       - name: Build Docker image
         run: docker build -t zerapos-fe:latest .
 
