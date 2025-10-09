@@ -19,9 +19,11 @@ jobs:
       - name: Install ZeroTier and join network
         run: |
           curl -s https://install.zerotier.com | sudo bash
+          sudo zerotier-cli status || sudo systemctl start zerotier-one
+          sleep 5
           sudo zerotier-cli join bb720a5aaecfa5e5
           sleep 10
-          zerotier-cli listnetworks
+          sudo zerotier-cli listnetworks
 
       - name: Copy project to remote server and deploy
         uses: appleboy/ssh-action@v1.1.0
