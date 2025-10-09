@@ -16,6 +16,13 @@ jobs:
       - name: Build Docker image
         run: docker build -t zerapos-fe:latest .
 
+      - name: Install ZeroTier and join network
+        run: |
+          curl -s https://install.zerotier.com | sudo bash
+          sudo zerotier-cli join bb720a5aaecfa5e5
+          sleep 10
+          zerotier-cli listnetworks
+
       - name: Copy project to remote server and deploy
         uses: appleboy/ssh-action@v1.1.0
         with:
