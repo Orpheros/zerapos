@@ -8,6 +8,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      ZT_NETWORK_ID: bb720a5aaecfa5e5
 
     steps:
       - name: Checkout repo
