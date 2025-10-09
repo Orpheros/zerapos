@@ -15,7 +15,7 @@ CMD ["npm", "run", "build"]
 
 FROM nginx:1.25-alpine
 
-COPY --from=builder /app/zerapos-fe /usr/share/nginx/html/zerapos-fe
+COPY /app/zerapos-fe /usr/share/nginx/html/zerapos-fe
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
