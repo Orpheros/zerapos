@@ -22,16 +22,7 @@ jobs:
           # install ZeroTier
           curl -s https://install.zerotier.com | sudo bash
 
-          # stop service so we can write identity safely
-          sudo systemctl stop zerotier-one || true
-
-          # write identity.secret from secret (base64)
-          echo "$ZEROTIER_IDENTITY_SECRET_B64" | base64 -d | sudo tee /var/lib/zerotier-one/identity.secret > /dev/null
-          sudo chown root:root /var/lib/zerotier-one/identity.secret
-          sudo chmod 600 /var/lib/zerotier-one/identity.secret
-
           # start service (it will use the identity we wrote)
-          sudo systemctl daemon-reload
           sudo systemctl start zerotier-one
           sleep 4
           echo "zerotier-cli info:"
