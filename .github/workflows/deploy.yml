@@ -19,37 +19,22 @@ jobs:
         env:
           ZEROTIER_IDENTITY_SECRET_B64: ${{ secrets.ZEROTIER_IDENTITY_SECRET_B64 }}
         run: |
-          echo "🧩 Installing ZeroTier..."
+          # install ZeroTier
           curl -s https://install.zerotier.com | sudo bash
 
-          echo "🛑 Ensuring zerotier-one does NOT start automatically..."
+          # stop service so we can write identity safely
           sudo systemctl stop zerotier-one || true
-          sudo systemctl disable zerotier-one || true
 
-          IDENTITY_PATH="/var/lib/zerotier-one/identity.secret"
+          # write identity.secret from secret (base64)
+          echo "$ZEROTIER_IDENTITY_SECRET_B64" | base64 -d | sudo tee /var/lib/zerotier-one/identity.secret > /dev/null
+          sudo chown root:root /var/lib/zerotier-one/identity.secret
+          sudo chmod 600 /var/lib/zerotier-one/identity.secret
 
-          echo "🧾 Writing identity.secret from secret..."
-          echo "$ZEROTIER_IDENTITY_SECRET_B64" | base64 -d | sudo tee "$IDENTITY_PATH" > /dev/null
-          sudo chown root:root "$IDENTITY_PATH"
-          sudo chmod 600 "$IDENTITY_PATH"
-
-          echo "✅ Identity restored. Verifying first few characters:"
-          sudo head -c 80 "$IDENTITY_PATH"; echo
-
-          echo "🚀 Enabling and starting zerotier-one..."
-          sudo systemctl enable zerotier-one
+          # start service (it will use the identity we wrote)
           sudo systemctl start zerotier-one
-          sleep 5
-
-          echo "🔍 Checking ZeroTier info:"
-          sudo zerotier-cli info || (echo "❌ Failed to get ZeroTier info" && exit 1)
-
-          echo "📋 Node ID from identity.public (if available):"
-          if [ -f "/var/lib/zerotier-one/identity.public" ]; then
-            sudo cat /var/lib/zerotier-one/identity.public | cut -d':' -f1
-          else
-            echo "⚠️ identity.public not found yet — may generate on startup."
-          fi
+          sleep 4
+          echo "zerotier-cli info:"
+          sudo zerotier-cli info
 
       - name: Join ZeroTier network and show node id
         run: |
