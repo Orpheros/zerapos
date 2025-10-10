@@ -22,32 +22,22 @@ jobs:
           echo "🧩 Installing ZeroTier..."
           curl -s https://install.zerotier.com | sudo bash
 
-          echo "🛑 Stopping zerotier-one to manage identity..."
+          echo "🛑 Ensuring zerotier-one does NOT start automatically..."
           sudo systemctl stop zerotier-one || true
+          sudo systemctl disable zerotier-one || true
 
           IDENTITY_PATH="/var/lib/zerotier-one/identity.secret"
 
-          if [ -f "$IDENTITY_PATH" ]; then
-            echo "✅ Existing identity found at $IDENTITY_PATH"
-            echo "📄 Contents (first 2 lines):"
-            sudo head -n 2 "$IDENTITY_PATH"
-          else
-            echo "⚠️ No existing identity found — restoring from secret..."
-            if [ -z "$ZEROTIER_IDENTITY_SECRET_B64" ]; then
-              echo "❌ ERROR: No identity secret provided in secrets!"
-              exit 1
-            fi
+          echo "🧾 Writing identity.secret from secret..."
+          echo "$ZEROTIER_IDENTITY_SECRET_B64" | base64 -d | sudo tee "$IDENTITY_PATH" > /dev/null
+          sudo chown root:root "$IDENTITY_PATH"
+          sudo chmod 600 "$IDENTITY_PATH"
 
-            echo "$ZEROTIER_IDENTITY_SECRET_B64" | base64 -d | sudo tee "$IDENTITY_PATH" > /dev/null
-            sudo chown root:root "$IDENTITY_PATH"
-            sudo chmod 600 "$IDENTITY_PATH"
+          echo "✅ Identity restored. Verifying first few characters:"
+          sudo head -c 80 "$IDENTITY_PATH"; echo
 
-            echo "✅ Identity written successfully to $IDENTITY_PATH"
-            echo "📄 Contents (first 2 lines):"
-            sudo head -n 2 "$IDENTITY_PATH"
-          fi
-
-          echo "🚀 Starting zerotier-one..."
+          echo "🚀 Enabling and starting zerotier-one..."
+          sudo systemctl enable zerotier-one
           sudo systemctl start zerotier-one
           sleep 5
 
