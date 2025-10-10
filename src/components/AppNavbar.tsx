@@ -9,7 +9,7 @@ const menuItems = [
 ];
 
 export function AppNavbar() {
-  const [storeName] = useState<string>("Sambal Gledek Bang Jo");
+  const [storeName] = useState<string>("Sambal Gledek Bang Jo!");
   const navigate = useNavigate();
 
   return (
