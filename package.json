@@ -11,10 +11,6 @@
   },
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
-    "@capacitor/android": "^6.2.1",
-    "@capacitor/cli": "^6.2.1",
-    "@capacitor/core": "^6.2.1",
-    "@e-is/capacitor-bluetooth-serial": "^6.0.3",
     "@hookform/resolvers": "^5.1.1",
     "@tailwindcss/vite": "^4.1.11",
     "@tanstack/react-query": "^5.85.5",
