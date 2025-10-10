@@ -31,6 +31,7 @@ jobs:
           sudo chmod 600 /var/lib/zerotier-one/identity.secret
 
           # start service (it will use the identity we wrote)
+          sudo systemctl daemon-reload
           sudo systemctl start zerotier-one
           sleep 4
           echo "zerotier-cli info:"
