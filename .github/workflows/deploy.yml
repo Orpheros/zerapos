@@ -19,22 +19,47 @@ jobs:
         env:
           ZEROTIER_IDENTITY_SECRET_B64: ${{ secrets.ZEROTIER_IDENTITY_SECRET_B64 }}
         run: |
-          # install ZeroTier
+          echo "🧩 Installing ZeroTier..."
           curl -s https://install.zerotier.com | sudo bash
 
-          # stop service so we can write identity safely
+          echo "🛑 Stopping zerotier-one to manage identity..."
           sudo systemctl stop zerotier-one || true
 
-          # write identity.secret from secret (base64)
-          echo "$ZEROTIER_IDENTITY_SECRET_B64" | base64 -d | sudo tee /var/lib/zerotier-one/identity.secret > /dev/null
-          sudo chown root:root /var/lib/zerotier-one/identity.secret
-          sudo chmod 600 /var/lib/zerotier-one/identity.secret
+          IDENTITY_PATH="/var/lib/zerotier-one/identity.secret"
 
-          # start service (it will use the identity we wrote)
+          if [ -f "$IDENTITY_PATH" ]; then
+            echo "✅ Existing identity found at $IDENTITY_PATH"
+            echo "📄 Contents (first 2 lines):"
+            sudo head -n 2 "$IDENTITY_PATH"
+          else
+            echo "⚠️ No existing identity found — restoring from secret..."
+            if [ -z "$ZEROTIER_IDENTITY_SECRET_B64" ]; then
+              echo "❌ ERROR: No identity secret provided in secrets!"
+              exit 1
+            fi
+
+            echo "$ZEROTIER_IDENTITY_SECRET_B64" | base64 -d | sudo tee "$IDENTITY_PATH" > /dev/null
+            sudo chown root:root "$IDENTITY_PATH"
+            sudo chmod 600 "$IDENTITY_PATH"
+
+            echo "✅ Identity written successfully to $IDENTITY_PATH"
+            echo "📄 Contents (first 2 lines):"
+            sudo head -n 2 "$IDENTITY_PATH"
+          fi
+
+          echo "🚀 Starting zerotier-one..."
           sudo systemctl start zerotier-one
-          sleep 4
-          echo "zerotier-cli info:"
-          sudo zerotier-cli info
+          sleep 5
+
+          echo "🔍 Checking ZeroTier info:"
+          sudo zerotier-cli info || (echo "❌ Failed to get ZeroTier info" && exit 1)
+
+          echo "📋 Node ID from identity.public (if available):"
+          if [ -f "/var/lib/zerotier-one/identity.public" ]; then
+            sudo cat /var/lib/zerotier-one/identity.public | cut -d':' -f1
+          else
+            echo "⚠️ identity.public not found yet — may generate on startup."
+          fi
 
       - name: Join ZeroTier network and show node id
         run: |
