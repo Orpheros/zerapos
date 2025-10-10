@@ -39,7 +39,7 @@ jobs:
       - name: Wait for ZeroTier 'OK' (authorized/has IP)
         run: |
           echo "Waiting up to 2 minutes for ZeroTier authorization..."
-          for i in {1..24}; do
+          for i in {1..10}; do
             STATUS=$(sudo zerotier-cli listnetworks 2>/dev/null | awk '{print $6}' | head -n1 || echo "UNKNOWN")
             echo "Attempt $i - status: $STATUS"
             if [ "$STATUS" = "OK" ]; then
