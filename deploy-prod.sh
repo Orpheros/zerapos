@@ -1,15 +1,14 @@
 #!/bin/bash
 # ============================================
-# Deployment Script for Production
+# Production Deployment Script for ZeraPOS FE
 # ============================================
 
-# Stop immediately if a command fails
-set -e
+set -e  # stop on first error
 
 # --- Configuration ---
-IMAGE_NAME="zerapos-fe"
-CONTAINER_NAME="zerapos-fe"
-BRANCH="main"           
+IMAGE_NAME="zerapos-fe"               # Docker image name
+CONTAINER_NAME="zerapos-fe-container" # Consistent container name
+BRANCH="main"                         # Branch to deploy
 
 # --- Helper function ---
 log() {
@@ -30,20 +29,22 @@ git pull origin $BRANCH
 log "Building Docker image..."
 docker build -t $IMAGE_NAME .
 
-# Optional: stop and remove old container if it exists
+# Stop and remove any existing container with the same name
 if [ "$(docker ps -q -f name=$CONTAINER_NAME)" ]; then
-  log "Stopping existing container..."
+  log "Stopping existing container ($CONTAINER_NAME)..."
   docker stop $CONTAINER_NAME
 fi
 
 if [ "$(docker ps -a -q -f name=$CONTAINER_NAME)" ]; then
-  log "Removing old container..."
+  log "Removing old container ($CONTAINER_NAME)..."
   docker rm $CONTAINER_NAME
 fi
 
-log "Starting new container..."
+log "Running new container..."
 docker run -d \
+  --name $CONTAINER_NAME \
   -p 8080:80 \
+  --restart always \
   $IMAGE_NAME
 
-log "✅ Deployment complete! Container is running."
+log "✅ Deployment complete! Container '$CONTAINER_NAME' is now running on port 8080."
